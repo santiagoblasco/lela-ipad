@@ -3,8 +3,8 @@
 
 const CONFIG = {
   // Google Apps Script Web App URLs — reemplazar con las URLs reales tras el deploy
-  PHOTOS_ENDPOINT: 'https://script.google.com/macros/s/REPLACE_WITH_PHOTOS_SCRIPT_ID/exec?resource=photos',
-  NEWS_ENDPOINT:   'https://script.google.com/macros/s/REPLACE_WITH_NEWS_SCRIPT_ID/exec?resource=news',
+  PHOTOS_ENDPOINT: 'https://script.google.com/macros/s/AKfycbwZOCY0G4hbLrGU8IaFZt_qeP6QOVXAk8ucEEEJ4JhaphWe3gLXFWB40DtmANNFAUYI/exec?resource=photos',
+  NEWS_ENDPOINT:   'https://script.google.com/macros/s/AKfycbzUq7aowX4XnfdE9bpl-CQ7LPo-TJg1YxBzq-N2JXUEL234liBAWgAwh5G5mmlsLelp/exec?resource=news',
 
   // Ubicación para el clima (Buenos Aires — cambiar si la persona vive en otro lugar)
   WEATHER_LAT:      -34.6037,
