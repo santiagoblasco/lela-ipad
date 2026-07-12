@@ -229,6 +229,99 @@ html, body {
   color: rgba(255,255,255,0.45);
 }
 
+/* ─── PIN overlay ─────────────────────────────────────────────────────────── */
+[data-lela-auth="1"] #pin-overlay { display: none; }
+
+#pin-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.4s ease;
+}
+
+#pin-overlay.fading { opacity: 0; }
+
+#pin-card {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+#pin-card.shake { animation: pin-shake 0.45s ease; }
+
+@keyframes pin-shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-12px); }
+  40%       { transform: translateX(12px); }
+  60%       { transform: translateX(-8px); }
+  80%       { transform: translateX(8px); }
+}
+
+#pin-title {
+  font-size: 26px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 36px;
+  letter-spacing: 0.3px;
+}
+
+#pin-dots {
+  display: flex;
+  gap: 22px;
+  justify-content: center;
+  margin-bottom: 44px;
+}
+
+.pin-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: transparent;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.pin-dot.filled {
+  background: #fff;
+  border-color: #fff;
+}
+
+#pin-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 84px);
+  gap: 16px;
+  justify-content: center;
+}
+
+.pin-key {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff;
+  font-size: 30px;
+  font-weight: 300;
+  font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  cursor: pointer;
+  transition: background 0.12s;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.pin-key:active { background: rgba(255, 255, 255, 0.32); }
+
+.pin-key-empty {
+  width: 84px;
+  height: 84px;
+}
+
 /* ─── Safe area para muescas / bordes redondeados de pantalla ─────────────── */
 @supports (padding: max(0px)) {
   #clock      { top:  max(28px, env(safe-area-inset-top) + 12px);

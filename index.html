@@ -8,8 +8,37 @@
   <meta name="mobile-web-app-capable" content="yes">
   <title>Susana</title>
   <link rel="stylesheet" href="style.css">
+  <!-- Auth check runs synchronously before body renders to avoid flash -->
+  <script src="js/auth.js"></script>
 </head>
 <body>
+
+  <!-- ── PIN Protection Overlay ─────────────────────────────── -->
+  <div id="pin-overlay">
+    <div id="pin-card">
+      <p id="pin-title">Ingresá el código</p>
+      <div id="pin-dots">
+        <span class="pin-dot"></span>
+        <span class="pin-dot"></span>
+        <span class="pin-dot"></span>
+        <span class="pin-dot"></span>
+      </div>
+      <div id="pin-keypad">
+        <button class="pin-key" data-digit="1">1</button>
+        <button class="pin-key" data-digit="2">2</button>
+        <button class="pin-key" data-digit="3">3</button>
+        <button class="pin-key" data-digit="4">4</button>
+        <button class="pin-key" data-digit="5">5</button>
+        <button class="pin-key" data-digit="6">6</button>
+        <button class="pin-key" data-digit="7">7</button>
+        <button class="pin-key" data-digit="8">8</button>
+        <button class="pin-key" data-digit="9">9</button>
+        <div class="pin-key-empty"></div>
+        <button class="pin-key" data-digit="0">0</button>
+        <button class="pin-key" id="pin-del">⌫</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ── Fotos ─────────────────────────────────────────── -->
   <div id="photo-container">
