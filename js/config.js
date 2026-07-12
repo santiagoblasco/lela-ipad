@@ -1,0 +1,30 @@
+// ─── Configuración central ───────────────────────────────────────────────────
+// Editar aquí para cambiar URLs, ciudad, timings, etc.
+
+const CONFIG = {
+  // Google Apps Script Web App URLs — reemplazar con las URLs reales tras el deploy
+  PHOTOS_ENDPOINT: 'https://script.google.com/macros/s/REPLACE_WITH_PHOTOS_SCRIPT_ID/exec?resource=photos',
+  NEWS_ENDPOINT:   'https://script.google.com/macros/s/REPLACE_WITH_NEWS_SCRIPT_ID/exec?resource=news',
+
+  // Ubicación para el clima (Buenos Aires — cambiar si la persona vive en otro lugar)
+  WEATHER_LAT:      -34.6037,
+  WEATHER_LON:      -58.3816,
+  WEATHER_TIMEZONE: 'America/Argentina/Buenos_Aires',
+
+  // Timings (ms)
+  PHOTO_INTERVAL_MS:    10_000,       // cuánto dura cada foto
+  PHOTO_FADE_MS:         1_000,       // duración del fundido cruzado
+  NEWS_INTERVAL_MS:     18_000,       // cuánto dura cada titular
+  NEWS_FADE_MS:            800,       // fundido entre titulares
+  OVERLAY_TIMEOUT_MS:   15_000,       // cierre automático de overlays por inactividad
+  WEATHER_REFRESH_MS:   30 * 60_000,  // refrescar clima cada 30 min
+  NEWS_REFRESH_MS:      60 * 60_000,  // refrescar noticias cada 1 h
+  PHOTOS_REFRESH_MS:    60 * 60_000,  // refrescar lista de fotos cada 1 h
+
+  // Palabras clave a filtrar de las noticias (ampliar según necesidad)
+  NEWS_EXCLUDE_KEYWORDS: [
+    'asesinato', 'crimen', 'femicidio', 'violación', 'secuestro', 'robo',
+    'accidente fatal', 'fallecido', 'muerto', 'muerte', 'tragedia',
+    'huelga de hambre', 'represión', 'desaparecido',
+  ],
+};

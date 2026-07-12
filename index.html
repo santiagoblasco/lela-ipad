@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Susana</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ── Fotos ─────────────────────────────────────────── -->
+  <div id="photo-container">
+    <div id="photo-a" class="photo-layer"></div>
+    <div id="photo-b" class="photo-layer"></div>
+  </div>
+
+  <!-- ── Reloj / Fecha ──────────────────────────────────── -->
+  <div id="clock">
+    <span id="clock-date">cargando…</span>
+    <span id="clock-time"></span>
+  </div>
+
+  <!-- ── Widget de clima ────────────────────────────────── -->
+  <div id="weather-widget" role="button" aria-label="Ver pronóstico del tiempo">
+    <span id="weather-emoji">🌡️</span>
+    <span id="weather-temp">--°</span>
+    <span id="weather-desc">cargando</span>
+  </div>
+
+  <!-- ── Barra de noticias ───────────────────────────────── -->
+  <div id="news-bar" role="button" aria-label="Ver noticia completa">
+    <span id="news-label">Hoy</span>
+    <span id="news-text">Cargando noticias…</span>
+  </div>
+
+  <!-- ── Overlay (clima detalle / noticia) ──────────────── -->
+  <div id="overlay" role="dialog" aria-modal="true">
+    <div id="overlay-card">
+      <button id="overlay-close" aria-label="Cerrar">✕</button>
+      <div id="overlay-body"></div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/weather-codes.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
