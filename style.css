@@ -379,6 +379,8 @@ html, body {
   padding: 40px 48px;
   max-width: 640px;
   width: 90%;
+  max-height: 88vh;
+  overflow-y: auto;
   position: relative;
   border: 1px solid rgba(255,255,255,0.1);
 }
@@ -424,6 +426,7 @@ html, body {
 .forecast-emoji { font-size: 34px; }
 .forecast-desc  { font-size: 24px; flex: 1; }
 .forecast-temps { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+.temp-now { font-size: 22px; font-weight: 500; color: rgba(255,255,255,0.75); white-space: nowrap; margin-bottom: 2px; }
 .temp-max { font-size: 24px; font-weight: 600; color: #ff6b45; white-space: nowrap; }
 .temp-min { font-size: 24px; font-weight: 600; color: #64b5f6; white-space: nowrap; }
 

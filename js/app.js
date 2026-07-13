@@ -159,7 +159,7 @@ async function loadWeather() {
     `&current=temperature_2m,weather_code` +
     `&daily=weather_code,temperature_2m_max,temperature_2m_min` +
     `&timezone=${encodeURIComponent(CONFIG.WEATHER_TIMEZONE)}` +
-    `&forecast_days=4`;
+    `&forecast_days=7`;
 
   try {
     const data = await fetchJSON(url);
@@ -187,22 +187,34 @@ function renderWeatherWidget(data) {
 }
 
 function buildWeatherDetailHTML(data) {
-  const labels = ['Hoy', 'Mañana'];
-  const rows = data.daily.time.slice(0, 2).map((dateStr, i) => {
+  const rows = data.daily.time.slice(0, 7).map((dateStr, i) => {
     const [year, month, day] = dateStr.split('-').map(Number);
     const dateLabel = `${day} de ${MESES[month - 1]}`;
-    const code = data.daily.weather_code[i];
+
+    let dayLabel;
+    if      (i === 0) dayLabel = 'Hoy';
+    else if (i === 1) dayLabel = 'Mañana';
+    else              dayLabel = DIAS[new Date(year, month - 1, day).getDay()];
+
+    // Hoy: usar condición actual para que coincida con el widget
+    const code = (i === 0) ? data.current.weather_code : data.daily.weather_code[i];
     const info = getWeatherInfo(code);
     const max  = Math.round(data.daily.temperature_2m_max[i]);
     const min  = Math.round(data.daily.temperature_2m_min[i]);
+
+    const nowRow = (i === 0)
+      ? `<span class="temp-now">Ahora: ${Math.round(data.current.temperature_2m)}°</span>`
+      : '';
+
     return `<div class="forecast-row">
       <div class="forecast-day-block">
-        <span class="forecast-day">${labels[i]}</span>
+        <span class="forecast-day">${dayLabel}</span>
         <span class="forecast-date">${dateLabel}</span>
       </div>
       <span class="forecast-emoji">${info.emoji}</span>
       <span class="forecast-desc">${info.text}</span>
       <div class="forecast-temps">
+        ${nowRow}
         <span class="temp-max">▲ Máx. ${max}°</span>
         <span class="temp-min">▼ Mín. ${min}°</span>
       </div>
