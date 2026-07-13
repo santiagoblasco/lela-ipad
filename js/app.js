@@ -8,6 +8,7 @@ const state = {
   overlayTimer: null,
   triviaItems:  [],
   triviaCurrent: null,
+  triviaAutoKey: null,
 };
 
 // ─── Utilidades ────────────────────────────────────────────────────────────────
@@ -46,6 +47,26 @@ function updateClock() {
 
   document.getElementById('clock-date').textContent = `${dia} ${num} de ${mes}`;
   document.getElementById('clock-time').textContent = `${hh}:${mm}`;
+
+  maybeAutoTrivia(now);
+}
+
+// Dispara la trivia sola a ciertas horas del día (una vez por hora objetivo)
+function maybeAutoTrivia(now) {
+  if (!state.triviaItems.length) return;
+  if (now.getMinutes() !== 0) return;
+  if (!CONFIG.TRIVIA_AUTO_HOURS.includes(now.getHours())) return;
+
+  const key = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${now.getHours()}`;
+  if (state.triviaAutoKey === key) return;
+  state.triviaAutoKey = key;
+
+  const anyOverlayOpen = document.getElementById('overlay').classList.contains('visible')
+    || document.getElementById('reader-overlay').classList.contains('visible')
+    || document.getElementById('trivia-overlay').classList.contains('visible');
+  if (anyOverlayOpen) return;
+
+  openTrivia();
 }
 
 function startClock() {
