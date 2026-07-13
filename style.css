@@ -16,6 +16,7 @@ html, body {
 #photo-container {
   position: fixed;
   inset: 0;
+  touch-action: pan-y; /* pan-y → browser handles vertical; JS handles horizontal swipe */
 }
 
 /* Layer de foto: div con background-image */
@@ -203,10 +204,12 @@ html, body {
 
 .forecast-row:last-child { border-bottom: none; }
 
-.forecast-day   { font-size: 26px; font-weight: 600; width: 130px; flex-shrink: 0; }
+.forecast-day-block { display: flex; flex-direction: column; width: 160px; flex-shrink: 0; gap: 2px; }
+.forecast-day   { font-size: 28px; font-weight: 700; }
+.forecast-date  { font-size: 20px; font-weight: 400; opacity: 0.75; }
 .forecast-emoji { font-size: 34px; }
 .forecast-desc  { font-size: 24px; flex: 1; }
-.forecast-temps { font-size: 26px; font-weight: 300; white-space: nowrap; }
+.forecast-temps { font-size: 24px; font-weight: 400; white-space: nowrap; }
 
 /* Overlay de noticias */
 .overlay-news-title {
