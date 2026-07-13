@@ -227,6 +227,30 @@ function htmlToParas(html) {
     .slice(0, 12);
 }
 
+// Divide un bloque de texto en párrafos legibles. Algunos sitios (La Nación)
+// entregan articleBody como un único string sin saltos de línea; en ese caso
+// se agrupan oraciones en bloques de ~400 caracteres en vez de truncar.
+function splitIntoParagraphs(text) {
+  var byBlank = text.split(/\n{2,}/).map(function(p) { return p.trim(); }).filter(function(p) { return p.length > 20; });
+  if (byBlank.length >= 2) return byBlank.slice(0, 20);
+
+  var byLine = text.split(/\n/).map(function(p) { return p.trim(); }).filter(function(p) { return p.length > 20; });
+  if (byLine.length >= 2) return byLine.slice(0, 20);
+
+  var sentences = text.match(/[^.!?]+[.!?]+(\s+|$)/g) || [text];
+  var paras = [];
+  var current = '';
+  for (var i = 0; i < sentences.length; i++) {
+    current += sentences[i];
+    if (current.length > 400) {
+      paras.push(current.trim());
+      current = '';
+    }
+  }
+  if (current.trim()) paras.push(current.trim());
+  return paras.slice(0, 20);
+}
+
 // Descarga el artículo completo e intenta extraer párrafos
 function fetchArticleParas(url) {
   if (!url) return [];
@@ -250,11 +274,7 @@ function fetchArticleParas(url) {
         for (var k = 0; k < candidates.length; k++) {
           var body = candidates[k].articleBody;
           if (body && body.length > 100) {
-            return body.split(/\n{2,}/)
-              .map(function(p) { return p.trim(); })
-              .filter(function(p) { return p.length > 40; })
-              .map(function(p) { return p.length > 600 ? p.substring(0, 600) + '…' : p; })
-              .slice(0, 12);
+            return splitIntoParagraphs(body);
           }
         }
       } catch (_) {}
@@ -272,7 +292,7 @@ function fetchArticleParas(url) {
         .replace(/\s{2,}/g, ' ').trim();
       if (text.length > 60) paras.push(text);
     }
-    return paras.slice(0, 12);
+    return paras.slice(0, 20);
   } catch (e) {
     return [];
   }
