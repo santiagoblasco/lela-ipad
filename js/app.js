@@ -389,9 +389,6 @@ function buildReaderHTML(item) {
     }
   } else if (item.summary) {
     parts.push(`<p class="reader-para">${item.summary}</p>`);
-    parts.push(`<p class="reader-para-empty">Para leer la nota completa buscá "${item.source}" en el navegador.</p>`);
-  } else {
-    parts.push(`<p class="reader-para-empty">No hay más contenido disponible.</p>`);
   }
 
   return parts.join('');

@@ -41,6 +41,8 @@ var EXCLUDE_KEYWORDS = [
   'terremoto', 'tsunami', 'epidemia', 'pandemia',
   // Conflictos bélicos
   'guerra', 'bombardeo', 'ataque terrorista', 'atentado',
+  // Temas de visa e inmigración técnica
+  'green card', 'visa h-1b', 'visa f-1', 'visa de trabajo',
 ];
 
 var MAX_GENERAL   = 3;  // titulares de actualidad / política
@@ -129,6 +131,12 @@ function fetchSource(source, max) {
 
       var paragraphs = htmlToParas(sourceHtml);
 
+      // Intentar artículo completo; reemplaza contenido RSS si es más rico
+      if (link) {
+        var fetched = fetchArticleParas(link);
+        if (fetched.length >= 3) paragraphs = fetched;
+      }
+
       items.push({
         title:      sanitize(title),
         summary:    sanitize(trimDesc(rawDesc)),
@@ -215,8 +223,59 @@ function htmlToParas(html) {
   return text.split('\n')
     .map(function(p) { return p.trim(); })
     .filter(function(p) { return p.length > 40; })
-    .map(function(p) { return p.length > 400 ? p.substring(0, 400) + '…' : p; })
-    .slice(0, 5);
+    .map(function(p) { return p.length > 600 ? p.substring(0, 600) + '…' : p; })
+    .slice(0, 12);
+}
+
+// Descarga el artículo completo e intenta extraer párrafos
+function fetchArticleParas(url) {
+  if (!url) return [];
+  try {
+    var resp = UrlFetchApp.fetch(url, {
+      muteHttpExceptions: true,
+      followRedirects: true,
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)' }
+    });
+    if (resp.getResponseCode() !== 200) return [];
+    var html = resp.getContentText();
+    if (html.length > 500000) html = html.substring(0, 500000);
+
+    // JSON-LD articleBody (muy fiable en medios argentinos)
+    var ldRe = /<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi;
+    var ldMatch;
+    while ((ldMatch = ldRe.exec(html)) !== null) {
+      try {
+        var ld = JSON.parse(ldMatch[1]);
+        var candidates = Array.isArray(ld['@graph']) ? ld['@graph'] : [ld];
+        for (var k = 0; k < candidates.length; k++) {
+          var body = candidates[k].articleBody;
+          if (body && body.length > 100) {
+            return body.split(/\n{2,}/)
+              .map(function(p) { return p.trim(); })
+              .filter(function(p) { return p.length > 40; })
+              .map(function(p) { return p.length > 600 ? p.substring(0, 600) + '…' : p; })
+              .slice(0, 12);
+          }
+        }
+      } catch (_) {}
+    }
+
+    // Fallback: etiquetas <p>
+    var paras = [];
+    var re = /<p[^>]*>([\s\S]*?)<\/p>/gi;
+    var m;
+    while ((m = re.exec(html)) !== null) {
+      var text = m[1]
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'")
+        .replace(/\s{2,}/g, ' ').trim();
+      if (text.length > 60) paras.push(text);
+    }
+    return paras.slice(0, 12);
+  } catch (e) {
+    return [];
+  }
 }
 
 // ─── Helpers XML ───────────────────────────────────────────────────────────────
