@@ -5,6 +5,7 @@ const CONFIG = {
   // Google Apps Script Web App URLs — reemplazar con las URLs reales tras el deploy
   PHOTOS_ENDPOINT: 'https://script.google.com/macros/s/AKfycbwZOCY0G4hbLrGU8IaFZt_qeP6QOVXAk8ucEEEJ4JhaphWe3gLXFWB40DtmANNFAUYI/exec?resource=photos',
   NEWS_ENDPOINT:   'https://script.google.com/macros/s/AKfycbzUq7aowX4XnfdE9bpl-CQ7LPo-TJg1YxBzq-N2JXUEL234liBAWgAwh5G5mmlsLelp/exec?resource=news',
+  TRIVIA_ENDPOINT: 'PEGAR_AQUI_LA_URL_DEL_DEPLOY_DE_TRIVIA/exec?resource=trivia',
 
   // Ubicación para el clima (Buenos Aires — cambiar si la persona vive en otro lugar)
   WEATHER_LAT:      -34.6037,
@@ -21,6 +22,8 @@ const CONFIG = {
   NEWS_REFRESH_MS:      60 * 60_000,  // refrescar noticias cada 1 h
   PHOTOS_REFRESH_MS:    60 * 60_000,  // refrescar lista de fotos cada 1 h
   VERSION_CHECK_MS:     15 * 60_000,  // chequear si hay una versión nueva del sitio cada 15 min
+  TRIVIA_REFRESH_MS:    60 * 60_000,  // refrescar preguntas de trivia cada 1 h
+  TRIVIA_CLOSE_CHANCE:  0.5,          // prob. de cerrar el juego tras acertar (si no, sigue con otra pregunta)
 
   // Palabras clave a filtrar de las noticias (sincronizado con EXCLUDE_KEYWORDS en news-endpoint.gs)
   NEWS_EXCLUDE_KEYWORDS: [

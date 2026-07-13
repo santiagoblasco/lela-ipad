@@ -63,6 +63,9 @@
     <span id="weather-desc">cargando</span>
   </div>
 
+  <!-- ── Ícono de trivia ─────────────────────────────────── -->
+  <div id="trivia-icon" role="button" aria-label="Jugar trivia">🎯</div>
+
   <!-- ── Barra de noticias ───────────────────────────────── -->
   <div id="news-bar" role="button" aria-label="Ver noticia completa">
     <span id="news-label">Hoy</span>
@@ -87,6 +90,17 @@
         <div id="reader-body"></div>
       </div>
     </div>
+  </div>
+
+  <!-- ── Overlay de trivia ───────────────────────────────── -->
+  <div id="trivia-overlay" role="dialog" aria-modal="true">
+    <div id="trivia-card">
+      <button id="trivia-close" aria-label="Cerrar">✕</button>
+      <p id="trivia-question"></p>
+      <div id="trivia-options"></div>
+      <p id="trivia-feedback"></p>
+    </div>
+    <div id="trivia-confetti"></div>
   </div>
 
   <!-- Scripts -->

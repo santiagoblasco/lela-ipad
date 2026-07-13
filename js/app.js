@@ -6,6 +6,8 @@ const state = {
   newsItems:    [],
   newsIndex:    0,
   overlayTimer: null,
+  triviaItems:  [],
+  triviaCurrent: null,
 };
 
 // ─── Utilidades ────────────────────────────────────────────────────────────────
@@ -179,7 +181,10 @@ function buildWeatherDetailHTML(data) {
       </div>
       <span class="forecast-emoji">${info.emoji}</span>
       <span class="forecast-desc">${info.text}</span>
-      <span class="forecast-temps">Máxima: ${max}° &nbsp;&nbsp; Mínima: ${min}°</span>
+      <div class="forecast-temps">
+        <span class="temp-max">▲ Máx. ${max}°</span>
+        <span class="temp-min">▼ Mín. ${min}°</span>
+      </div>
     </div>`;
   }).join('');
 
@@ -224,6 +229,107 @@ function startNewsLoop() {
   el.textContent = state.newsItems[0].title;
 
   setInterval(advanceNews, CONFIG.NEWS_INTERVAL_MS);
+}
+
+// ─── Trivia ────────────────────────────────────────────────────────────────────
+
+async function loadTrivia() {
+  try {
+    const data = await fetchJSON(CONFIG.TRIVIA_ENDPOINT);
+    if (data.questions && data.questions.length > 0) {
+      state.triviaItems = data.questions;
+      saveCache('trivia', data.questions);
+      log('Trivia cargada:', data.questions.length);
+    }
+  } catch (err) {
+    log('Error cargando trivia, usando caché:', err.message);
+    const cached = loadCache('trivia');
+    if (cached && cached.length > 0 && state.triviaItems.length === 0) {
+      state.triviaItems = cached;
+    }
+  }
+}
+
+function pickTriviaQuestion() {
+  const items = state.triviaItems;
+  return items[Math.floor(Math.random() * items.length)];
+}
+
+function renderTriviaQuestion(q) {
+  state.triviaCurrent = q;
+
+  document.getElementById('trivia-question').textContent = q.pregunta;
+
+  const feedback = document.getElementById('trivia-feedback');
+  feedback.textContent = '';
+  feedback.classList.remove('visible');
+
+  const options = shuffleArray([q.correcta, ...q.incorrectas]);
+  const container = document.getElementById('trivia-options');
+  container.innerHTML = '';
+
+  options.forEach((text) => {
+    const btn = document.createElement('button');
+    btn.className = 'trivia-option';
+    btn.textContent = text;
+    btn.addEventListener('click', () => handleTriviaAnswer(btn, text));
+    container.appendChild(btn);
+  });
+}
+
+function handleTriviaAnswer(btn, selected) {
+  const q = state.triviaCurrent;
+  const isCorrect = selected === q.correcta;
+  const buttons = [...document.getElementById('trivia-options').children];
+  buttons.forEach(b => b.disabled = true);
+
+  if (isCorrect) {
+    btn.classList.add('correct');
+    launchConfetti();
+    setTimeout(() => {
+      if (Math.random() < CONFIG.TRIVIA_CLOSE_CHANCE) {
+        closeTrivia();
+      } else {
+        renderTriviaQuestion(pickTriviaQuestion());
+      }
+    }, 1400);
+  } else {
+    btn.classList.add('wrong');
+    document.getElementById('trivia-card').classList.add('trivia-shake');
+    setTimeout(() => document.getElementById('trivia-card').classList.remove('trivia-shake'), 450);
+
+    const feedback = document.getElementById('trivia-feedback');
+    feedback.textContent = q.correccion || 'No es correcto, ¡probá de nuevo!';
+    feedback.classList.add('visible');
+
+    setTimeout(() => renderTriviaQuestion(q), 2600);
+  }
+}
+
+const CONFETTI_COLORS = ['#f5c842', '#4ec86e', '#5aa9ff', '#ff6b8a', '#c47af0'];
+
+function launchConfetti() {
+  const container = document.getElementById('trivia-confetti');
+  for (let i = 0; i < 40; i++) {
+    const piece = document.createElement('span');
+    piece.className = 'confetti-piece';
+    piece.style.left = `${Math.random() * 100}%`;
+    piece.style.background = CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)];
+    piece.style.animationDelay = `${Math.random() * 0.3}s`;
+    piece.style.animationDuration = `${1.1 + Math.random() * 0.6}s`;
+    container.appendChild(piece);
+    setTimeout(() => piece.remove(), 2200);
+  }
+}
+
+function openTrivia() {
+  if (!state.triviaItems.length) return;
+  renderTriviaQuestion(pickTriviaQuestion());
+  document.getElementById('trivia-overlay').classList.add('visible');
+}
+
+function closeTrivia() {
+  document.getElementById('trivia-overlay').classList.remove('visible');
 }
 
 // ─── Overlay de clima ──────────────────────────────────────────────────────────
@@ -387,6 +493,15 @@ function setupListeners() {
   // Botón de actualizar (respaldo manual del auto-refresh)
   document.getElementById('refresh-btn').addEventListener('click', () => location.reload());
 
+  // Tap en ícono de trivia → abrir juego
+  document.getElementById('trivia-icon').addEventListener('click', openTrivia);
+
+  // Cerrar trivia tocando el fondo o el botón
+  document.getElementById('trivia-overlay').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('trivia-overlay')) closeTrivia();
+  });
+  document.getElementById('trivia-close').addEventListener('click', closeTrivia);
+
   // Cualquier toque en el overlay de clima reinicia el timer de cierre automático
   document.getElementById('overlay-card').addEventListener('click', resetOverlayTimer);
 }
@@ -421,8 +536,11 @@ async function init() {
   const cachedWeather = loadCache('weather');
   if (cachedWeather) renderWeatherWidget(cachedWeather);
 
+  const cachedTrivia = loadCache('trivia');
+  if (cachedTrivia && cachedTrivia.length > 0) state.triviaItems = cachedTrivia;
+
   // Ahora cargar de red
-  await Promise.allSettled([loadPhotos(), loadWeather(), loadNews()]);
+  await Promise.allSettled([loadPhotos(), loadWeather(), loadNews(), loadTrivia()]);
 
   // Si no había caché de fotos, arrancar ahora que cargaron de red
   if (!cachedPhotos || cachedPhotos.length === 0) startPhotoLoop();
@@ -432,6 +550,7 @@ async function init() {
   setInterval(loadPhotos,  CONFIG.PHOTOS_REFRESH_MS);
   setInterval(loadWeather, CONFIG.WEATHER_REFRESH_MS);
   setInterval(loadNews,    CONFIG.NEWS_REFRESH_MS);
+  setInterval(loadTrivia,  CONFIG.TRIVIA_REFRESH_MS);
   startVersionCheck();
 }
 
