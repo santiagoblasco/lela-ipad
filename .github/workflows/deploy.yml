@@ -23,6 +23,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Inject cache-busting hash
+        run: |
+          HASH=$(git rev-parse --short HEAD)
+          sed -i "s/CACHEBUST/$HASH/g" index.html
+
       - uses: actions/configure-pages@v4
 
       - uses: actions/upload-pages-artifact@v3
