@@ -7,6 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="mobile-web-app-capable" content="yes">
   <title>Susana</title>
+  <meta name="build-version" content="CACHEBUST">
   <link rel="stylesheet" href="style.css?v=CACHEBUST">
   <!-- Auth check runs synchronously before body renders to avoid flash -->
   <script src="js/auth.js?v=CACHEBUST"></script>
@@ -51,6 +52,9 @@
     <span id="clock-date">cargando…</span>
     <span id="clock-time"></span>
   </div>
+
+  <!-- ── Botón de actualizar (respaldo manual) ──────────── -->
+  <button id="refresh-btn" aria-label="Actualizar">↻</button>
 
   <!-- ── Widget de clima ────────────────────────────────── -->
   <div id="weather-widget" role="button" aria-label="Ver pronóstico del tiempo">

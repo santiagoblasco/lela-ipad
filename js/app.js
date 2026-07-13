@@ -320,6 +320,38 @@ function setupSwipe() {
   }, { passive: true });
 }
 
+// ─── Auto-actualización ─────────────────────────────────────────────────────────
+// El iPad queda prendido 24/7 sin que nadie navegue nunca, así que la página
+// nunca se recarga sola y se queda corriendo el JS de la primera carga para
+// siempre. Esto chequea periódicamente si hubo un deploy nuevo (comparando el
+// build-version embebido contra el que sirve el servidor) y recarga sola.
+// El botón de refresh es el respaldo manual por si esto falla.
+
+const CURRENT_BUILD = document.querySelector('meta[name="build-version"]')?.content || '';
+
+async function checkForUpdate() {
+  try {
+    const res = await fetch(`index.html?t=${Date.now()}`, { cache: 'no-store' });
+    const html = await res.text();
+    const match = html.match(/<meta name="build-version" content="([^"]+)">/);
+    const serverBuild = match ? match[1] : null;
+
+    if (serverBuild && CURRENT_BUILD && serverBuild !== CURRENT_BUILD) {
+      log('Nueva versión detectada:', serverBuild, '(actual:', CURRENT_BUILD + ')');
+      // No interrumpir si está mirando el clima o leyendo una noticia
+      const overlayOpen = document.getElementById('overlay').classList.contains('visible')
+        || document.getElementById('reader-overlay').classList.contains('visible');
+      if (!overlayOpen) location.reload();
+    }
+  } catch (err) {
+    log('Error chequeando versión:', err.message);
+  }
+}
+
+function startVersionCheck() {
+  setInterval(checkForUpdate, CONFIG.VERSION_CHECK_MS);
+}
+
 // ─── Event listeners ───────────────────────────────────────────────────────────
 
 function setupListeners() {
@@ -351,6 +383,9 @@ function setupListeners() {
 
   // Tap en botón cerrar overlay de clima
   document.getElementById('overlay-close').addEventListener('click', closeOverlay);
+
+  // Botón de actualizar (respaldo manual del auto-refresh)
+  document.getElementById('refresh-btn').addEventListener('click', () => location.reload());
 
   // Cualquier toque en el overlay de clima reinicia el timer de cierre automático
   document.getElementById('overlay-card').addEventListener('click', resetOverlayTimer);
@@ -397,6 +432,7 @@ async function init() {
   setInterval(loadPhotos,  CONFIG.PHOTOS_REFRESH_MS);
   setInterval(loadWeather, CONFIG.WEATHER_REFRESH_MS);
   setInterval(loadNews,    CONFIG.NEWS_REFRESH_MS);
+  startVersionCheck();
 }
 
 document.addEventListener('DOMContentLoaded', init);

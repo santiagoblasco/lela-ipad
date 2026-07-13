@@ -20,6 +20,7 @@ const CONFIG = {
   WEATHER_REFRESH_MS:   30 * 60_000,  // refrescar clima cada 30 min
   NEWS_REFRESH_MS:      60 * 60_000,  // refrescar noticias cada 1 h
   PHOTOS_REFRESH_MS:    60 * 60_000,  // refrescar lista de fotos cada 1 h
+  VERSION_CHECK_MS:     15 * 60_000,  // chequear si hay una versión nueva del sitio cada 15 min
 
   // Palabras clave a filtrar de las noticias (sincronizado con EXCLUDE_KEYWORDS en news-endpoint.gs)
   NEWS_EXCLUDE_KEYWORDS: [
