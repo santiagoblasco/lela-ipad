@@ -23,7 +23,6 @@ const CONFIG = {
   PHOTOS_REFRESH_MS:    60 * 60_000,  // refrescar lista de fotos cada 1 h
   VERSION_CHECK_MS:     15 * 60_000,  // chequear si hay una versión nueva del sitio cada 15 min
   TRIVIA_REFRESH_MS:    60 * 60_000,  // refrescar preguntas de trivia cada 1 h
-  TRIVIA_CLOSE_CHANCE:  0.5,          // prob. de cerrar el juego tras acertar (si no, sigue con otra pregunta)
 
   // Palabras clave a filtrar de las noticias (sincronizado con EXCLUDE_KEYWORDS en news-endpoint.gs)
   NEWS_EXCLUDE_KEYWORDS: [

@@ -245,17 +245,45 @@ html, body {
 
 .trivia-option:disabled { cursor: default; }
 
-#trivia-feedback {
-  font-size: 20px;
-  color: rgba(255,255,255,0.75);
-  line-height: 1.5;
-  margin-top: 22px;
-  min-height: 1px;
-  opacity: 0;
-  transition: opacity 0.3s ease;
+#trivia-question-view.hidden { display: none; }
+
+/* Vista de corrección: ocupa todo el modal cuando falla una respuesta */
+#trivia-correction-view {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  min-height: 380px;
+  text-align: center;
 }
 
-#trivia-feedback.visible { opacity: 1; }
+#trivia-correction-view.visible { display: flex; }
+
+#trivia-correction-text {
+  font-size: 36px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.4;
+}
+
+#trivia-continue {
+  font-family: inherit;
+  font-size: 26px;
+  font-weight: 700;
+  color: #1c1c20;
+  background: #f5c842;
+  border: none;
+  border-radius: 20px;
+  padding: 20px 52px;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.15s;
+}
+
+#trivia-continue:active {
+  transform: scale(0.96);
+  background: #e0b636;
+}
 
 /* Confetti de acierto */
 #trivia-confetti {

@@ -258,11 +258,8 @@ function pickTriviaQuestion() {
 function renderTriviaQuestion(q) {
   state.triviaCurrent = q;
 
+  hideCorrection();
   document.getElementById('trivia-question').textContent = q.pregunta;
-
-  const feedback = document.getElementById('trivia-feedback');
-  feedback.textContent = '';
-  feedback.classList.remove('visible');
 
   const options = shuffleArray([q.correcta, ...q.incorrectas]);
   const container = document.getElementById('trivia-options');
@@ -277,6 +274,17 @@ function renderTriviaQuestion(q) {
   });
 }
 
+function showCorrection(q) {
+  document.getElementById('trivia-question-view').classList.add('hidden');
+  document.getElementById('trivia-correction-text').textContent = q.correccion || 'No es correcto, ¡probá de nuevo!';
+  document.getElementById('trivia-correction-view').classList.add('visible');
+}
+
+function hideCorrection() {
+  document.getElementById('trivia-correction-view').classList.remove('visible');
+  document.getElementById('trivia-question-view').classList.remove('hidden');
+}
+
 function handleTriviaAnswer(btn, selected) {
   const q = state.triviaCurrent;
   const isCorrect = selected === q.correcta;
@@ -286,23 +294,13 @@ function handleTriviaAnswer(btn, selected) {
   if (isCorrect) {
     btn.classList.add('correct');
     launchConfetti();
-    setTimeout(() => {
-      if (Math.random() < CONFIG.TRIVIA_CLOSE_CHANCE) {
-        closeTrivia();
-      } else {
-        renderTriviaQuestion(pickTriviaQuestion());
-      }
-    }, 1400);
+    setTimeout(closeTrivia, 1400);
   } else {
     btn.classList.add('wrong');
     document.getElementById('trivia-card').classList.add('trivia-shake');
     setTimeout(() => document.getElementById('trivia-card').classList.remove('trivia-shake'), 450);
 
-    const feedback = document.getElementById('trivia-feedback');
-    feedback.textContent = q.correccion || 'No es correcto, ¡probá de nuevo!';
-    feedback.classList.add('visible');
-
-    setTimeout(() => renderTriviaQuestion(q), 2600);
+    setTimeout(() => showCorrection(q), 700);
   }
 }
 
@@ -498,6 +496,11 @@ function setupListeners() {
     if (e.target === document.getElementById('trivia-overlay')) closeTrivia();
   });
   document.getElementById('trivia-close').addEventListener('click', closeTrivia);
+
+  // Botón "Continuar" tras leer la corrección → repite la misma pregunta
+  document.getElementById('trivia-continue').addEventListener('click', () => {
+    renderTriviaQuestion(state.triviaCurrent);
+  });
 
   // Cualquier toque en el overlay de clima reinicia el timer de cierre automático
   document.getElementById('overlay-card').addEventListener('click', resetOverlayTimer);
