@@ -1,23 +1,3 @@
-// ─── Modo demo (activo cuando los endpoints no están configurados) ──────────────
-
-const DEMO_PHOTOS = [
-  // Fotos de Unsplash (libre de derechos, tamaño controlado)
-  { id: 'd1', url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=1600&q=80' },
-  { id: 'd2', url: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=1600&q=80' },
-  { id: 'd3', url: 'https://images.unsplash.com/photo-1511895426328-dc8714191011?w=1600&q=80' },
-  { id: 'd4', url: 'https://images.unsplash.com/photo-1464207687429-7505649dae38?w=1600&q=80' },
-];
-
-const DEMO_NEWS = [
-  { title: 'El tiempo mejora en Buenos Aires esta semana', source: 'Demo', date: 'hoy' },
-  { title: 'Récord de visitantes en los parques nacionales argentinos', source: 'Demo', date: 'hoy' },
-  { title: 'Nuevo tango argentino triunfa en festivales internacionales', source: 'Demo', date: 'hoy' },
-];
-
-function isPlaceholder(url) {
-  return url.includes('REPLACE_WITH');
-}
-
 // ─── Estado global ─────────────────────────────────────────────────────────────
 
 const state = {
@@ -107,6 +87,12 @@ function advancePhoto() {
   setPhoto(state.photos[state.photoIndex].url);
 }
 
+function previousPhoto() {
+  if (!state.photos.length) return;
+  state.photoIndex = (state.photoIndex - 1 + state.photos.length) % state.photos.length;
+  setPhoto(state.photos[state.photoIndex].url);
+}
+
 function startPhotoLoop() {
   if (!state.photos.length) return;
   const firstUrl = state.photos[0].url;
@@ -116,13 +102,6 @@ function startPhotoLoop() {
 }
 
 async function loadPhotos() {
-  if (isPlaceholder(CONFIG.PHOTOS_ENDPOINT)) {
-    if (state.photos.length === 0) {
-      state.photos = DEMO_PHOTOS;
-      log('Modo demo: usando fotos de ejemplo');
-    }
-    return;
-  }
   try {
     const data = await fetchJSON(CONFIG.PHOTOS_ENDPOINT);
     if (data.photos && data.photos.length > 0) {
@@ -205,13 +184,6 @@ function buildWeatherDetailHTML(data) {
 // ─── Noticias ──────────────────────────────────────────────────────────────────
 
 async function loadNews() {
-  if (isPlaceholder(CONFIG.NEWS_ENDPOINT)) {
-    if (state.newsItems.length === 0) {
-      state.newsItems = DEMO_NEWS;
-      log('Modo demo: usando noticias de ejemplo');
-    }
-    return;
-  }
   try {
     const data = await fetchJSON(CONFIG.NEWS_ENDPOINT);
     if (data.items && data.items.length > 0) {
@@ -268,6 +240,25 @@ function resetOverlayTimer() {
   state.overlayTimer = setTimeout(closeOverlay, CONFIG.OVERLAY_TIMEOUT_MS);
 }
 
+// ─── Swipe para cambiar foto ───────────────────────────────────────────────────
+
+let swipeStartX = null;
+
+function setupSwipe() {
+  const container = document.getElementById('photo-container');
+  container.addEventListener('touchstart', (e) => {
+    swipeStartX = e.touches[0].clientX;
+  }, { passive: true });
+  container.addEventListener('touchend', (e) => {
+    if (swipeStartX === null) return;
+    const delta = e.changedTouches[0].clientX - swipeStartX;
+    swipeStartX = null;
+    if (Math.abs(delta) < 50) return;
+    if (delta < 0) advancePhoto();
+    else previousPhoto();
+  }, { passive: true });
+}
+
 // ─── Event listeners ───────────────────────────────────────────────────────────
 
 function setupListeners() {
@@ -305,7 +296,14 @@ function setupListeners() {
 
 async function init() {
   setupListeners();
+  setupSwipe();
   startClock();
+
+  // Limpiar caché de fotos demo (Unsplash) si quedó de una versión anterior
+  const _rawPhotos = loadCache('photos');
+  if (_rawPhotos && _rawPhotos.some(p => p.url && p.url.includes('unsplash.com'))) {
+    try { localStorage.removeItem('photos'); } catch (_) {}
+  }
 
   // Cargar datos iniciales (primero caché, luego red)
   // Fotos: arrancar con caché si existe, mientras carga la lista real
