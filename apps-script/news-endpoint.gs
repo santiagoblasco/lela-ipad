@@ -1,88 +1,163 @@
 // ─── Apps Script: Endpoint de noticias ────────────────────────────────────────
-// Este script tiene DOS roles:
-//   1. Trigger diario (7am): fetch del RSS → filtra → guarda en Script Properties
-//   2. doGet: sirve las noticias ya cacheadas al frontend
-//
-// Deploy: mismo proceso que photos-endpoint.gs (puede ser el mismo script o uno aparte)
-//   Si es el mismo script: combinar doGet() de ambos archivos en uno solo.
-//   Si es aparte: usar una URL diferente en CONFIG.NEWS_ENDPOINT
+// Curado para Susana: actualidad general argentina + chimentos / farándula
+// Sin: crímenes, violencia, accidentes, noticias perturbadoras
 //
 // Trigger: Apps Script → Desencadenadores → Agregar desencadenador
 //   Función: refreshNews
 //   Fuente: Temporizador → Cronológico por días → Entre 7:00 y 8:00 AM
 
-// ── Fuentes RSS a intentar (en orden de preferencia) ──────────────────────────
-// Si la primera falla, se intenta la siguiente. Verificar cuál funciona mejor.
-var RSS_SOURCES = [
-  { name: 'La Nación', url: 'https://www.lanacion.com.ar/arc/outboundfeeds/rss/?outputType=xml' },
-  { name: 'Infobae',   url: 'https://www.infobae.com/feeds/rss/' },
-  { name: 'Clarín',    url: 'https://www.clarin.com/rss/lo-ultimo/' },
+// ── Fuentes de actualidad general ─────────────────────────────────────────────
+var SOURCES_GENERAL = [
+  { name: 'La Nación',   url: 'https://www.lanacion.com.ar/arc/outboundfeeds/rss/?outputType=xml' },
+  { name: 'Infobae',     url: 'https://www.infobae.com/feeds/rss/' },
+  { name: 'Clarín',      url: 'https://www.clarin.com/rss/lo-ultimo/' },
 ];
 
-// Palabras clave a excluir (sincronizar con CONFIG.NEWS_EXCLUDE_KEYWORDS del frontend)
+// ── Fuentes de chimentos y entretenimiento ────────────────────────────────────
+var SOURCES_CHIMENTOS = [
+  { name: 'Teleshow',               url: 'https://www.infobae.com/teleshow/rss/' },
+  { name: 'La Nación Espectáculos', url: 'https://www.lanacion.com.ar/espectaculos/arc/outboundfeeds/rss/?outputType=xml' },
+  { name: 'Clarín Espectáculos',    url: 'https://www.clarin.com/rss/espectaculos/' },
+];
+
+// ── Palabras clave a excluir ──────────────────────────────────────────────────
+// (mantener sincronizado con NEWS_EXCLUDE_KEYWORDS en js/config.js)
 var EXCLUDE_KEYWORDS = [
-  'asesinato', 'crimen', 'femicidio', 'violación', 'secuestro', 'robo',
-  'accidente fatal', 'fallecido', 'muerto', 'muerte', 'tragedia',
-  'huelga de hambre', 'represión', 'desaparecido',
+  // Crimen y violencia
+  'asesinato', 'crimen', 'femicidio', 'violación', 'abuso sexual',
+  'secuestro', 'robo', 'asalto', 'tiroteo', 'balacera',
+  'narcotráfico', 'narco', 'sicario', 'mafia',
+  // Muerte y accidentes graves
+  'accidente fatal', 'fallecido', 'fallecida', 'muerto', 'muertos', 'muerta',
+  'muerte', 'tragedia', 'víctima fatal', 'choque fatal', 'incendio mortal',
+  'cuerpo sin vida', 'hallaron muerto', 'hallaron muerta',
+  // Violencia de género
+  'golpiza', 'femicida', 'violencia de género',
+  // Conflictos y represión
+  'huelga de hambre', 'represión', 'desaparecido', 'desaparecida',
+  // Suicidio
+  'suicidio', 'se quitó la vida', 'intentó quitarse',
+  // Desastres naturales y pandemias
+  'terremoto', 'tsunami', 'epidemia', 'pandemia',
+  // Conflictos bélicos
+  'guerra', 'bombardeo', 'ataque terrorista', 'atentado',
 ];
 
-var MAX_NEWS = 5; // máximo de titulares a mostrar
+var MAX_GENERAL   = 3;  // titulares de actualidad / política
+var MAX_CHIMENTOS = 4;  // titulares de chimentos / farándula
+
+// ── Namespaces RSS ────────────────────────────────────────────────────────────
+var NS_MEDIA   = 'http://search.yahoo.com/mrss/';
+var NS_CONTENT = 'http://purl.org/rss/1.0/modules/content/';
 
 // ─── Trigger diario ────────────────────────────────────────────────────────────
 
 function refreshNews() {
-  var items = [];
+  var general   = fetchFromSources(SOURCES_GENERAL,   MAX_GENERAL);
+  var chimentos = fetchFromSources(SOURCES_CHIMENTOS, MAX_CHIMENTOS);
 
-  for (var s = 0; s < RSS_SOURCES.length && items.length === 0; s++) {
-    var source = RSS_SOURCES[s];
-    try {
-      var response = UrlFetchApp.fetch(source.url, { muteHttpExceptions: true });
-      if (response.getResponseCode() !== 200) continue;
-
-      var xml  = response.getContentText();
-      var doc  = XmlService.parse(xml);
-      var root = doc.getRootElement();
-
-      // Soporte RSS 2.0 y Atom
-      var entries = root.getChildren('channel').length > 0
-        ? root.getChild('channel').getChildren('item')     // RSS 2.0
-        : root.getChildren('entry');                       // Atom
-
-      for (var i = 0; i < entries.length && items.length < MAX_NEWS; i++) {
-        var entry = entries[i];
-        var title = getText(entry, 'title');
-        var link  = getText(entry, 'link') || getAttr(entry, 'link', 'href');
-        var desc  = getText(entry, 'description') || getText(entry, 'summary');
-        var date  = getText(entry, 'pubDate') || getText(entry, 'updated') || '';
-
-        if (!title) continue;
-        if (containsExcluded(title + ' ' + desc)) continue;
-
-        items.push({
-          title:   sanitize(title),
-          summary: sanitize(trimDesc(desc)),
-          link:    link || '',
-          source:  source.name,
-          date:    formatDate(date),
-        });
-      }
-
-      if (items.length > 0) {
-        Logger.log('RSS OK desde: ' + source.name + ' (' + items.length + ' titulares)');
-      }
-    } catch (err) {
-      Logger.log('Error RSS ' + source.name + ': ' + err.message);
-    }
-  }
+  var items = interleave(chimentos, general); // chimentos primero para más variedad
 
   if (items.length === 0) {
-    Logger.log('Ninguna fuente RSS respondió. Manteniendo noticias anteriores.');
+    Logger.log('Sin noticias nuevas. Manteniendo caché anterior.');
     return;
   }
 
   var payload = JSON.stringify({ updated_at: new Date().toISOString(), items: items });
   PropertiesService.getScriptProperties().setProperty('news_cache', payload);
-  Logger.log('Noticias guardadas: ' + items.length);
+  Logger.log('Noticias guardadas: ' + items.length + ' (' + general.length + ' generales, ' + chimentos.length + ' chimentos)');
+}
+
+// Intenta fuentes en orden; acumula hasta `max` ítems válidos
+function fetchFromSources(sources, max) {
+  var items = [];
+  for (var s = 0; s < sources.length && items.length < max; s++) {
+    var batch = fetchSource(sources[s], max - items.length);
+    items = items.concat(batch);
+  }
+  return items;
+}
+
+function fetchSource(source, max) {
+  var items = [];
+  try {
+    var response = UrlFetchApp.fetch(source.url, { muteHttpExceptions: true });
+    if (response.getResponseCode() !== 200) return items;
+
+    var xml  = response.getContentText();
+    var doc  = XmlService.parse(xml);
+    var root = doc.getRootElement();
+
+    var entries = root.getChildren('channel').length > 0
+      ? root.getChild('channel').getChildren('item')
+      : root.getChildren('entry');
+
+    for (var i = 0; i < entries.length && items.length < max; i++) {
+      var entry = entries[i];
+      var title = getText(entry, 'title');
+      var link  = getText(entry, 'link') || getAttr(entry, 'link', 'href');
+      var rawDesc = getText(entry, 'description') || getText(entry, 'summary') || '';
+      var date  = getText(entry, 'pubDate') || getText(entry, 'updated') || '';
+
+      if (!title) continue;
+      if (containsExcluded(title + ' ' + rawDesc)) continue;
+
+      // Intentar extraer imagen del namespace media:content / media:thumbnail
+      var mediaImg = '';
+      try {
+        var mNs = XmlService.getNamespace(NS_MEDIA);
+        var mediaEl = entry.getChild('content', mNs) || entry.getChild('thumbnail', mNs);
+        if (mediaEl) {
+          var urlAttr = mediaEl.getAttribute('url');
+          if (urlAttr) mediaImg = urlAttr.getValue();
+        }
+      } catch (_) {}
+
+      // Intentar extraer contenido enriquecido de content:encoded
+      var richHtml = '';
+      try {
+        var cNs = XmlService.getNamespace(NS_CONTENT);
+        var encodedEl = entry.getChild('encoded', cNs);
+        if (encodedEl) richHtml = encodedEl.getText();
+      } catch (_) {}
+
+      // Extraer imágenes y párrafos del HTML disponible
+      var sourceHtml = richHtml || rawDesc;
+      var images     = extractImages(sourceHtml);
+      if (mediaImg && images.indexOf(mediaImg) === -1) images.unshift(mediaImg);
+      images = images.slice(0, 2);
+
+      var paragraphs = htmlToParas(sourceHtml);
+
+      items.push({
+        title:      sanitize(title),
+        summary:    sanitize(trimDesc(rawDesc)),
+        paragraphs: paragraphs,
+        images:     images,
+        link:       link || '',
+        source:     source.name,
+        date:       formatDate(date),
+      });
+    }
+
+    if (items.length > 0) {
+      Logger.log(source.name + ': ' + items.length + ' titular(es)');
+    }
+  } catch (err) {
+    Logger.log('Error RSS ' + source.name + ': ' + err.message);
+  }
+  return items;
+}
+
+// Intercala dos arrays: [a0, b0, a1, b1, ...]
+function interleave(a, b) {
+  var result = [];
+  var max = Math.max(a.length, b.length);
+  for (var i = 0; i < max; i++) {
+    if (i < a.length) result.push(a[i]);
+    if (i < b.length) result.push(b[i]);
+  }
+  return result;
 }
 
 // ─── doGet: servir noticias cacheadas ──────────────────────────────────────────
@@ -94,9 +169,6 @@ function doGet(e) {
     return handleNews();
   }
 
-  // Si este script también maneja fotos, agregar aquí:
-  // if (resource === 'photos') { return handlePhotos(); }
-
   return buildJSON({ error: 'recurso no reconocido' });
 }
 
@@ -104,7 +176,6 @@ function handleNews() {
   var cached = PropertiesService.getScriptProperties().getProperty('news_cache');
 
   if (!cached) {
-    // Primera vez: intentar fetch inmediato
     refreshNews();
     cached = PropertiesService.getScriptProperties().getProperty('news_cache');
   }
@@ -116,7 +187,39 @@ function handleNews() {
   return buildJSON(JSON.parse(cached));
 }
 
-// ─── Helpers ───────────────────────────────────────────────────────────────────
+// ─── Helpers de extracción ─────────────────────────────────────────────────────
+
+// Extrae src de <img> tags en HTML
+function extractImages(html) {
+  var urls = [];
+  if (!html) return urls;
+  var re = /<img[^>]+src=["']([^"']+)["']/gi;
+  var m;
+  while ((m = re.exec(html)) !== null) {
+    if (m[1].indexOf('http') === 0) urls.push(m[1]);
+  }
+  return urls.slice(0, 2);
+}
+
+// Convierte HTML en array de párrafos de texto plano
+function htmlToParas(html) {
+  if (!html) return [];
+  var text = html
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'")
+    .replace(/\s{2,}/g, ' ');
+
+  return text.split('\n')
+    .map(function(p) { return p.trim(); })
+    .filter(function(p) { return p.length > 40; })
+    .map(function(p) { return p.length > 400 ? p.substring(0, 400) + '…' : p; })
+    .slice(0, 5);
+}
+
+// ─── Helpers XML ───────────────────────────────────────────────────────────────
 
 function getText(el, name) {
   var child = el.getChild(name);
@@ -138,7 +241,6 @@ function containsExcluded(text) {
 
 function sanitize(str) {
   if (!str) return '';
-  // Eliminar tags HTML básicos
   return str.replace(/<[^>]+>/g, '').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").trim();
 }
 

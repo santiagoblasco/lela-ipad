@@ -21,10 +21,18 @@ const CONFIG = {
   NEWS_REFRESH_MS:      60 * 60_000,  // refrescar noticias cada 1 h
   PHOTOS_REFRESH_MS:    60 * 60_000,  // refrescar lista de fotos cada 1 h
 
-  // Palabras clave a filtrar de las noticias (ampliar según necesidad)
+  // Palabras clave a filtrar de las noticias (sincronizado con EXCLUDE_KEYWORDS en news-endpoint.gs)
   NEWS_EXCLUDE_KEYWORDS: [
-    'asesinato', 'crimen', 'femicidio', 'violación', 'secuestro', 'robo',
-    'accidente fatal', 'fallecido', 'muerto', 'muerte', 'tragedia',
-    'huelga de hambre', 'represión', 'desaparecido',
+    'asesinato', 'crimen', 'femicidio', 'violación', 'abuso sexual',
+    'secuestro', 'robo', 'asalto', 'tiroteo', 'balacera',
+    'narcotráfico', 'narco', 'sicario', 'mafia',
+    'accidente fatal', 'fallecido', 'fallecida', 'muerto', 'muertos', 'muerta',
+    'muerte', 'tragedia', 'víctima fatal', 'choque fatal', 'incendio mortal',
+    'cuerpo sin vida', 'hallaron muerto', 'hallaron muerta',
+    'golpiza', 'femicida', 'violencia de género',
+    'huelga de hambre', 'represión', 'desaparecido', 'desaparecida',
+    'suicidio', 'se quitó la vida', 'intentó quitarse',
+    'terremoto', 'tsunami', 'epidemia', 'pandemia',
+    'guerra', 'bombardeo', 'ataque terrorista', 'atentado',
   ],
 };

@@ -164,21 +164,26 @@ function renderWeatherWidget(data) {
 }
 
 function buildWeatherDetailHTML(data) {
-  const days = ['Hoy', 'Mañana', 'Pasado', 'En 3 días'];
-  const rows = data.daily.time.slice(0, 4).map((_, i) => {
+  const labels = ['Hoy', 'Mañana'];
+  const rows = data.daily.time.slice(0, 2).map((dateStr, i) => {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const dateLabel = `${day} de ${MESES[month - 1]}`;
     const code = data.daily.weather_code[i];
     const info = getWeatherInfo(code);
     const max  = Math.round(data.daily.temperature_2m_max[i]);
     const min  = Math.round(data.daily.temperature_2m_min[i]);
     return `<div class="forecast-row">
-      <span class="forecast-day">${days[i]}</span>
+      <div class="forecast-day-block">
+        <span class="forecast-day">${labels[i]}</span>
+        <span class="forecast-date">${dateLabel}</span>
+      </div>
       <span class="forecast-emoji">${info.emoji}</span>
       <span class="forecast-desc">${info.text}</span>
-      <span class="forecast-temps">${max}° / ${min}°</span>
+      <span class="forecast-temps">Máxima: ${max}° &nbsp;&nbsp; Mínima: ${min}°</span>
     </div>`;
   }).join('');
 
-  return `<h2 class="overlay-title">Pronóstico</h2>${rows}`;
+  return `<h2 class="overlay-title">El tiempo</h2>${rows}`;
 }
 
 // ─── Noticias ──────────────────────────────────────────────────────────────────
@@ -221,7 +226,7 @@ function startNewsLoop() {
   setInterval(advanceNews, CONFIG.NEWS_INTERVAL_MS);
 }
 
-// ─── Overlays ──────────────────────────────────────────────────────────────────
+// ─── Overlay de clima ──────────────────────────────────────────────────────────
 
 function openOverlay(contentHTML) {
   const overlay = document.getElementById('overlay');
@@ -238,6 +243,62 @@ function closeOverlay() {
 function resetOverlayTimer() {
   clearTimeout(state.overlayTimer);
   state.overlayTimer = setTimeout(closeOverlay, CONFIG.OVERLAY_TIMEOUT_MS);
+}
+
+// ─── Reader de noticias ────────────────────────────────────────────────────────
+
+function buildReaderHTML(item) {
+  const parts = [];
+
+  // Fuente
+  if (item.source) {
+    parts.push(`<p class="reader-source">${item.source}</p>`);
+  }
+
+  // Título
+  parts.push(`<h2 class="reader-title">${item.title}</h2>`);
+
+  // Fecha
+  if (item.date) {
+    parts.push(`<p class="reader-date">${item.date}</p>`);
+  }
+
+  parts.push('<hr class="reader-separator">');
+
+  // Imagen principal
+  const hasImages = item.images && item.images.length > 0;
+  if (hasImages) {
+    parts.push(`<img class="reader-image" src="${item.images[0]}" alt="" onerror="this.style.display='none'">`);
+  }
+
+  // Cuerpo: párrafos o summary de fallback
+  const hasParas = item.paragraphs && item.paragraphs.length > 0;
+  if (hasParas) {
+    item.paragraphs.forEach(p => {
+      parts.push(`<p class="reader-para">${p}</p>`);
+    });
+    // Segunda imagen intercalada si existe
+    if (hasImages && item.images.length > 1) {
+      parts.push(`<img class="reader-image" src="${item.images[1]}" alt="" onerror="this.style.display='none'">`);
+    }
+  } else if (item.summary) {
+    parts.push(`<p class="reader-para">${item.summary}</p>`);
+    parts.push(`<p class="reader-para-empty">Para leer la nota completa buscá "${item.source}" en el navegador.</p>`);
+  } else {
+    parts.push(`<p class="reader-para-empty">No hay más contenido disponible.</p>`);
+  }
+
+  return parts.join('');
+}
+
+function openReader(item) {
+  document.getElementById('reader-body').innerHTML = buildReaderHTML(item);
+  document.getElementById('reader-scroll').scrollTop = 0;
+  document.getElementById('reader-overlay').classList.add('visible');
+}
+
+function closeReader() {
+  document.getElementById('reader-overlay').classList.remove('visible');
 }
 
 // ─── Swipe para cambiar foto ───────────────────────────────────────────────────
@@ -269,26 +330,29 @@ function setupListeners() {
     openOverlay(buildWeatherDetailHTML(JSON.parse(raw)));
   });
 
-  // Tap en noticias → abrir detalle de la noticia actual
+  // Tap en noticias → abrir reader
   document.getElementById('news-bar').addEventListener('click', () => {
     const item = state.newsItems[state.newsIndex];
-    if (!item) return;
-    const html = `<h2 class="overlay-title">Noticia</h2>
-      <p class="overlay-news-title">${item.title}</p>
-      ${item.summary ? `<p class="overlay-news-summary">${item.summary}</p>` : ''}
-      <p class="overlay-news-source">${item.source ?? ''} · ${item.date ?? ''}</p>`;
-    openOverlay(html);
+    if (item) openReader(item);
   });
 
-  // Cerrar overlay tocando fondo
+  // Cerrar reader tocando el fondo
+  document.getElementById('reader-overlay').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('reader-overlay')) closeReader();
+  });
+
+  // Botón cerrar reader
+  document.getElementById('reader-close').addEventListener('click', closeReader);
+
+  // Cerrar overlay de clima tocando fondo
   document.getElementById('overlay').addEventListener('click', (e) => {
     if (e.target === document.getElementById('overlay')) closeOverlay();
   });
 
-  // Tap en botón cerrar overlay
+  // Tap en botón cerrar overlay de clima
   document.getElementById('overlay-close').addEventListener('click', closeOverlay);
 
-  // Cualquier toque en el overlay reinicia el timer de cierre automático
+  // Cualquier toque en el overlay de clima reinicia el timer de cierre automático
   document.getElementById('overlay-card').addEventListener('click', resetOverlayTimer);
 }
 
