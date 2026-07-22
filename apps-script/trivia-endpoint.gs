@@ -18,6 +18,11 @@
 var SPREADSHEET_ID = '1KbOolzkfKSHifUOOzZbqoIDh_MmoMM7oPTey2GkCd48';
 var SHEET_NAME      = 'Hoja 1';
 
+// Hojas donde se registran las respuestas de la trivia (se crean solas la
+// primera vez que alguien contesta una pregunta).
+var RESPONSES_SHEET_NAME = 'Respuestas';
+var SUMMARY_SHEET_NAME   = 'Resumen';
+
 function doGet(e) {
   var resource = (e && e.parameter && e.parameter.resource) ? e.parameter.resource : '';
 
@@ -26,6 +31,47 @@ function doGet(e) {
   }
 
   return buildJSON({ error: 'recurso no reconocido' });
+}
+
+// El frontend hace POST cada vez que se responde una pregunta de la trivia.
+function doPost(e) {
+  try {
+    var body = JSON.parse(e.postData.contents);
+    logTriviaResponse(body);
+    return buildJSON({ ok: true });
+  } catch (err) {
+    return buildJSON({ error: err.message }, 500);
+  }
+}
+
+function logTriviaResponse(body) {
+  var ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheet = getOrCreateResponsesSheet(ss);
+
+  sheet.appendRow([
+    new Date(),
+    body.pregunta     || '',
+    body.seleccionada || '',
+    body.correcta     || '',
+    !!body.acierto,
+  ]);
+}
+
+function getOrCreateResponsesSheet(ss) {
+  var sheet = ss.getSheetByName(RESPONSES_SHEET_NAME);
+  if (sheet) return sheet;
+
+  sheet = ss.insertSheet(RESPONSES_SHEET_NAME);
+  sheet.appendRow(['Fecha', 'Pregunta', 'Respuesta elegida', 'Respuesta correcta', 'Acierto']);
+
+  // Compilado por pregunta: total respondidas, correctas e incorrectas.
+  var summary = ss.getSheetByName(SUMMARY_SHEET_NAME) || ss.insertSheet(SUMMARY_SHEET_NAME);
+  summary.getRange('A1').setFormula(
+    '=QUERY(Respuestas!B:E, "select B, count(B), sum(E), count(B)-sum(E) group by B ' +
+    'label count(B) \'Total\', sum(E) \'Correctas\', count(B)-sum(E) \'Incorrectas\'", 1)'
+  );
+
+  return sheet;
 }
 
 function handleTrivia() {

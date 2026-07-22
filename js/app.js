@@ -318,9 +318,24 @@ function hideCorrection() {
   document.getElementById('trivia-question-view').classList.remove('hidden');
 }
 
+function logTriviaAnswer(q, selected, isCorrect) {
+  fetch(CONFIG.TRIVIA_ENDPOINT, {
+    method: 'POST',
+    mode: 'no-cors', // evita el preflight; no necesitamos leer la respuesta
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({
+      pregunta: q.pregunta,
+      seleccionada: selected,
+      correcta: q.correcta,
+      acierto: isCorrect,
+    }),
+  }).catch((err) => log('Error registrando respuesta de trivia:', err.message));
+}
+
 function handleTriviaAnswer(btn, selected) {
   const q = state.triviaCurrent;
   const isCorrect = selected === q.correcta;
+  logTriviaAnswer(q, selected, isCorrect);
   const buttons = [...document.getElementById('trivia-options').children];
   buttons.forEach(b => b.disabled = true);
 
