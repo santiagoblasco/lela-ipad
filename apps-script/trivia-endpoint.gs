@@ -53,7 +53,7 @@ function logTriviaResponse(body) {
     body.pregunta     || '',
     body.seleccionada || '',
     body.correcta     || '',
-    !!body.acierto,
+    body.acierto ? 1 : 0,
   ]);
 }
 
@@ -67,7 +67,7 @@ function getOrCreateResponsesSheet(ss) {
   // Compilado por pregunta: total respondidas, correctas e incorrectas.
   var summary = ss.getSheetByName(SUMMARY_SHEET_NAME) || ss.insertSheet(SUMMARY_SHEET_NAME);
   summary.getRange('A1').setFormula(
-    '=QUERY(Respuestas!B:E, "select B, count(B), sum(E), count(B)-sum(E) group by B ' +
+    '=QUERY(Respuestas!B:E, "select B, count(B), sum(E), count(B)-sum(E) where B <> \'\' group by B ' +
     'label count(B) \'Total\', sum(E) \'Correctas\', count(B)-sum(E) \'Incorrectas\'", 1)'
   );
 
