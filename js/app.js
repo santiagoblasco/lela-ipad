@@ -48,7 +48,14 @@ function updateClock() {
   document.getElementById('clock-date').textContent = `${dia} ${num} de ${mes}`;
   document.getElementById('clock-time').textContent = `${hh}:${mm}`;
 
+  updateNightMode(now);
   maybeAutoTrivia(now);
+}
+
+// Pantalla negra de 00:00 a 09:00 para ahorrar batería
+function updateNightMode(now) {
+  const isNight = now.getHours() < 9;
+  document.getElementById('night-overlay').classList.toggle('visible', isNight);
 }
 
 // Dispara la trivia sola a ciertas horas del día (una vez por hora objetivo)
@@ -84,6 +91,17 @@ function startClock() {
 const divA = document.getElementById('photo-a');
 const divB = document.getElementById('photo-b');
 let   activeDiv = 'a';
+let   photoTimerId = null;
+
+// Precarga las 2 fotos anteriores y las 2 siguientes para que el swipe sea instantáneo
+function preloadAdjacentPhotos() {
+  const total = state.photos.length;
+  if (!total) return;
+  [-2, -1, 1, 2].forEach((offset) => {
+    const idx = ((state.photoIndex + offset) % total + total) % total;
+    new Image().src = state.photos[idx].url;
+  });
+}
 
 function setPhoto(url) {
   const next = activeDiv === 'a' ? divB : divA;
@@ -108,12 +126,23 @@ function advancePhoto() {
   if (!state.photos.length) return;
   state.photoIndex = (state.photoIndex + 1) % state.photos.length;
   setPhoto(state.photos[state.photoIndex].url);
+  preloadAdjacentPhotos();
 }
 
 function previousPhoto() {
   if (!state.photos.length) return;
   state.photoIndex = (state.photoIndex - 1 + state.photos.length) % state.photos.length;
   setPhoto(state.photos[state.photoIndex].url);
+  preloadAdjacentPhotos();
+}
+
+// Reinicia la cuenta regresiva para el próximo cambio automático de foto
+function schedulePhotoAdvance() {
+  clearTimeout(photoTimerId);
+  photoTimerId = setTimeout(() => {
+    advancePhoto();
+    schedulePhotoAdvance();
+  }, CONFIG.PHOTO_INTERVAL_MS);
 }
 
 function startPhotoLoop() {
@@ -121,7 +150,8 @@ function startPhotoLoop() {
   const firstUrl = state.photos[0].url;
   divA.style.backgroundImage = `url('${firstUrl}')`;
   divA.classList.add('visible');
-  setInterval(advancePhoto, CONFIG.PHOTO_INTERVAL_MS);
+  preloadAdjacentPhotos();
+  schedulePhotoAdvance();
 }
 
 async function loadPhotos() {
@@ -466,6 +496,7 @@ function setupSwipe() {
     if (Math.abs(delta) < 50) return;
     if (delta < 0) advancePhoto();
     else previousPhoto();
+    schedulePhotoAdvance();
   }, { passive: true });
 }
 

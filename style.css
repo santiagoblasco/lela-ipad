@@ -12,6 +12,22 @@ html, body {
   user-select: none;
 }
 
+/* ─── Pantalla negra nocturna (00:00–09:00, ahorro de batería) ─────────────── */
+#night-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1s ease;
+}
+
+#night-overlay.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+
 /* ─── Contenedor de fotos ──────────────────────────────────────────────────── */
 #photo-container {
   position: fixed;
