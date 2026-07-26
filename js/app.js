@@ -348,18 +348,28 @@ function hideCorrection() {
   document.getElementById('trivia-question-view').classList.remove('hidden');
 }
 
-function logTriviaAnswer(q, selected, isCorrect) {
-  fetch(CONFIG.TRIVIA_ENDPOINT, {
-    method: 'POST',
-    mode: 'no-cors', // evita el preflight; no necesitamos leer la respuesta
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({
-      pregunta: q.pregunta,
-      seleccionada: selected,
-      correcta: q.correcta,
-      acierto: isCorrect,
-    }),
-  }).catch((err) => log('Error registrando respuesta de trivia:', err.message));
+async function logTriviaAnswer(q, selected, isCorrect, attempt = 1) {
+  try {
+    // Content-Type text/plain evita el preflight (Apps Script no responde OPTIONS).
+    const res = await fetch(CONFIG.TRIVIA_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        pregunta: q.pregunta,
+        seleccionada: selected,
+        correcta: q.correcta,
+        acierto: isCorrect,
+      }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  } catch (err) {
+    // Apps Script devuelve 503 ocasionalmente bajo carga; reintentar antes de perder la respuesta.
+    if (attempt < 3) {
+      setTimeout(() => logTriviaAnswer(q, selected, isCorrect, attempt + 1), 2000);
+    } else {
+      log('Error registrando respuesta de trivia:', err.message);
+    }
+  }
 }
 
 function handleTriviaAnswer(btn, selected) {
