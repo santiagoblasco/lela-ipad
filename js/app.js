@@ -225,8 +225,23 @@ function setupCalendarNav() {
   document.getElementById('calendar-next').addEventListener('click', () => changeCalendarMonth(1));
 
   let startX = null;
+  let startY = null;
   const grid = document.querySelector('.calendar-grid');
-  grid.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; }, { passive: true });
+
+  grid.addEventListener('touchstart', (e) => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+
+  // Si el gesto es horizontal, evitar que el navegador lo interprete como scroll
+  // (si no, en algunos táctiles el swipe se cancela antes de llegar a touchend)
+  grid.addEventListener('touchmove', (e) => {
+    if (startX === null) return;
+    const dx = e.touches[0].clientX - startX;
+    const dy = e.touches[0].clientY - startY;
+    if (Math.abs(dx) > Math.abs(dy)) e.preventDefault();
+  }, { passive: false });
+
   grid.addEventListener('touchend', (e) => {
     if (startX === null) return;
     const delta = e.changedTouches[0].clientX - startX;

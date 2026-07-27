@@ -494,6 +494,7 @@ html, body {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  margin-top: 36px;    /* despeja el botón de cerrar (✕), que es absolute y queda por encima */
   margin-bottom: 20px;
 }
 
