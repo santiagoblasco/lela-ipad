@@ -89,8 +89,10 @@ function startClock() {
 }
 
 // ─── Cumpleaños ────────────────────────────────────────────────────────────────
+// Recordatorios de cumpleaños de otras personas (no son saludos dirigidos a Susana).
 
-let birthdayAnnounceKey = null;
+let birthdayAnnounceKey  = null;
+let calendarViewDate     = null; // mes que se está mostrando en el calendario
 
 // Días que faltan hasta la próxima ocurrencia de un cumpleaños (0 = hoy)
 function daysUntilBirthday(bday, now) {
@@ -107,6 +109,23 @@ function getUpcomingBirthdays(now) {
     .sort((a, b) => a.daysUntil - b.daysUntil);
 }
 
+// "en 3 días" / "en 2 semanas y 3 días" / "en 4 meses y 2 días"
+function formatDaysUntil(days) {
+  if (days < 7) return `en ${days} día${days === 1 ? '' : 's'}`;
+
+  if (days < 31) {
+    const weeks = Math.floor(days / 7);
+    const rest  = days % 7;
+    const base  = `en ${weeks} semana${weeks === 1 ? '' : 's'}`;
+    return rest ? `${base} y ${rest} día${rest === 1 ? '' : 's'}` : base;
+  }
+
+  const months = Math.floor(days / 30);
+  const rest   = days % 30;
+  const base   = `en ${months} mes${months === 1 ? '' : 'es'}`;
+  return rest ? `${base} y ${rest} día${rest === 1 ? '' : 's'}` : base;
+}
+
 // Banner discreto que avisa cuando se acerca un cumpleaños (o si es hoy)
 function updateBirthdayBanner(now) {
   const banner = document.getElementById('birthday-banner');
@@ -121,8 +140,8 @@ function updateBirthdayBanner(now) {
     .map(b => b.name).join(' y ');
 
   banner.textContent = next.daysUntil === 0
-    ? `🎂 ¡Hoy es el cumpleaños de ${names}!`
-    : `🎂 Cumple de ${names} en ${next.daysUntil} día${next.daysUntil === 1 ? '' : 's'}`;
+    ? `🎂 Hoy es el cumpleaños de ${names}`
+    : `🎂 Cumple de ${names} ${formatDaysUntil(next.daysUntil)}`;
   banner.classList.add('visible');
 }
 
@@ -143,15 +162,15 @@ function maybeAnnounceBirthday(now) {
   if (anyOverlayOpen) return;
 
   const names = todays.map(b => b.name).join(' y ');
-  openOverlay(`<h2 class="overlay-title">🎉 ¡Feliz cumpleaños!</h2><p class="birthday-announce-text">Hoy es el cumpleaños de<br><strong>${names}</strong></p>`);
+  openOverlay(`<h2 class="overlay-title">🎂 Recordatorio de cumpleaños</h2><p class="birthday-announce-text">Hoy es el cumpleaños de<br><strong>${names}</strong></p>`);
   launchConfetti();
 }
 
-// Calendario del mes actual: hoy, cumpleaños marcados y próximo cumpleaños
-function buildBirthdayCalendarHTML(now) {
-  const year  = now.getFullYear();
-  const month = now.getMonth(); // 0-indexado
-  const today = now.getDate();
+// Calendario de un mes: hoy, cumpleaños marcados y próximo cumpleaños
+function buildBirthdayCalendarHTML(viewDate, now) {
+  const year  = viewDate.getFullYear();
+  const month = viewDate.getMonth(); // 0-indexado
+  const isCurrentMonth = year === now.getFullYear() && month === now.getMonth();
 
   const bdaysThisMonth = new Set(
     CONFIG.BIRTHDAYS.filter(b => b.month === month + 1).map(b => b.day)
@@ -164,7 +183,7 @@ function buildBirthdayCalendarHTML(now) {
   for (let i = 0; i < firstWeekday; i++) cells.push('<span class="calendar-day empty"></span>');
   for (let d = 1; d <= daysInMonth; d++) {
     const classes = ['calendar-day'];
-    if (d === today) classes.push('today');
+    if (isCurrentMonth && d === now.getDate()) classes.push('today');
     if (bdaysThisMonth.has(d)) classes.push('birthday');
     cells.push(`<span class="${classes.join(' ')}">${d}</span>`);
   }
@@ -174,15 +193,54 @@ function buildBirthdayCalendarHTML(now) {
 
   const [next] = getUpcomingBirthdays(now);
   const nextText = next.daysUntil === 0
-    ? `🎂 ¡Hoy es el cumpleaños de ${next.name}!`
-    : `🎂 Próximo cumpleaños: ${next.name}, en ${next.daysUntil} día${next.daysUntil === 1 ? '' : 's'}`;
+    ? `🎂 Hoy es el cumpleaños de ${next.name}`
+    : `🎂 Próximo cumpleaños: ${next.name}, ${formatDaysUntil(next.daysUntil)}`;
 
   return `
-    <h2 class="overlay-title">${MESES[month]} de ${year}</h2>
-    <p class="calendar-today">Hoy es ${DIAS[now.getDay()]} ${today} de ${MESES[month]}</p>
+    <div class="calendar-nav">
+      <button id="calendar-prev" class="calendar-nav-btn" aria-label="Mes anterior">‹</button>
+      <h2 class="calendar-month-title">${MESES[month]} de ${year}</h2>
+      <button id="calendar-next" class="calendar-nav-btn" aria-label="Mes siguiente">›</button>
+    </div>
+    <p class="calendar-today">Hoy es ${DIAS[now.getDay()]} ${now.getDate()} de ${MESES[now.getMonth()]}</p>
     <div class="calendar-grid">${weekHeaders}${cells.join('')}</div>
     <p class="calendar-next-birthday">${nextText}</p>
   `;
+}
+
+// Dibuja el mes actualmente seleccionado y conecta flechas + swipe
+function renderBirthdayCalendar() {
+  document.getElementById('overlay-body').innerHTML = buildBirthdayCalendarHTML(calendarViewDate, new Date());
+  setupCalendarNav();
+}
+
+function changeCalendarMonth(offset) {
+  calendarViewDate = new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth() + offset, 1);
+  renderBirthdayCalendar();
+  resetOverlayTimer();
+}
+
+function setupCalendarNav() {
+  document.getElementById('calendar-prev').addEventListener('click', () => changeCalendarMonth(-1));
+  document.getElementById('calendar-next').addEventListener('click', () => changeCalendarMonth(1));
+
+  let startX = null;
+  const grid = document.querySelector('.calendar-grid');
+  grid.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; }, { passive: true });
+  grid.addEventListener('touchend', (e) => {
+    if (startX === null) return;
+    const delta = e.changedTouches[0].clientX - startX;
+    startX = null;
+    if (Math.abs(delta) < 40) return;
+    changeCalendarMonth(delta < 0 ? 1 : -1);
+  }, { passive: true });
+}
+
+function openBirthdayCalendar() {
+  const now = new Date();
+  calendarViewDate = new Date(now.getFullYear(), now.getMonth(), 1);
+  openOverlay(buildBirthdayCalendarHTML(calendarViewDate, now));
+  setupCalendarNav();
 }
 
 // ─── Fotos ─────────────────────────────────────────────────────────────────────
@@ -645,9 +703,7 @@ function startVersionCheck() {
 
 function setupListeners() {
   // Tap en fecha/hora → abrir calendario con cumpleaños
-  document.getElementById('clock').addEventListener('click', () => {
-    openOverlay(buildBirthdayCalendarHTML(new Date()));
-  });
+  document.getElementById('clock').addEventListener('click', openBirthdayCalendar);
 
   // Tap en widget de clima → abrir detalle
   document.getElementById('weather-widget').addEventListener('click', () => {

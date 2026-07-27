@@ -489,6 +489,37 @@ html, body {
 }
 
 /* Calendario de cumpleaños */
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.calendar-month-title {
+  flex: 1;
+  text-align: center;
+  font-size: 30px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.calendar-nav-btn {
+  width: 48px; height: 48px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.12);
+  border: none;
+  color: #fff;
+  font-size: 26px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+}
+
+.calendar-nav-btn:active { background: rgba(255,255,255,0.25); }
+
 .calendar-today {
   font-size: 20px;
   color: rgba(255,255,255,0.7);
@@ -500,6 +531,7 @@ html, body {
   grid-template-columns: repeat(7, 1fr);
   gap: 6px;
   margin-bottom: 24px;
+  touch-action: pan-y;
 }
 
 .calendar-day-header {
