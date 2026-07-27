@@ -25,6 +25,24 @@ const CONFIG = {
   TRIVIA_REFRESH_MS:    60 * 60_000,  // refrescar preguntas de trivia cada 1 h
   TRIVIA_AUTO_HOURS:    [10, 18, 22],  // horas (0-23) en que la trivia se abre sola
 
+  BIRTHDAY_WARNING_DAYS: 5,   // desde cuántos días antes se muestra el banner de "se acerca"
+  BIRTHDAY_ANNOUNCE_HOUR: 9,  // hora (0-23) en que se anuncia el cumpleaños del día
+
+  // Cumpleaños (día y mes, sin año — no se calcula edad)
+  BIRTHDAYS: [
+    { name: 'Claudia',              day: 23, month: 7  },
+    { name: 'Santi',                day: 2,  month: 3  },
+    { name: 'Agus',                 day: 13, month: 11 },
+    { name: 'Mariana',              day: 8,  month: 4  },
+    { name: 'Pablo Blasco',         day: 3,  month: 6  },
+    { name: 'Pablo de la Iglesia',  day: 22, month: 3  },
+    { name: 'Gonza',                day: 18, month: 11 },
+    { name: 'Sonia',                day: 27, month: 11 },
+    { name: 'Marcela',              day: 13, month: 7  },
+    { name: 'Marcelo Crespo',       day: 14, month: 2  },
+    { name: 'Nancy',                day: 13, month: 6  },
+  ],
+
   // Palabras clave a filtrar de las noticias (sincronizado con EXCLUDE_KEYWORDS en news-endpoint.gs)
   NEWS_EXCLUDE_KEYWORDS: [
     'asesinato', 'crimen', 'femicidio', 'violación', 'abuso sexual',
