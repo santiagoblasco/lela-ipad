@@ -23,7 +23,7 @@ const CONFIG = {
   PHOTOS_REFRESH_MS:    60 * 60_000,  // refrescar lista de fotos cada 1 h
   VERSION_CHECK_MS:     15 * 60_000,  // chequear si hay una versión nueva del sitio cada 15 min
   TRIVIA_REFRESH_MS:    60 * 60_000,  // refrescar preguntas de trivia cada 1 h
-  TRIVIA_AUTO_HOURS:    [10, 18, 22],  // horas (0-23) en que la trivia se abre sola
+  TRIVIA_AUTO_HOURS:    [22],  // horas (0-23) en que la trivia se abre sola (una vez por día)
 
   BIRTHDAY_WARNING_DAYS: 5,   // desde cuántos días antes se muestra el banner de "se acerca"
   BIRTHDAY_ANNOUNCE_HOUR: 9,  // hora (0-23) en que se anuncia el cumpleaños del día
