@@ -752,6 +752,9 @@ function setupListeners() {
   // Botón de actualizar (respaldo manual del auto-refresh)
   document.getElementById('refresh-btn').addEventListener('click', () => location.reload());
 
+  // Tap en ícono de trivia → abrir juego
+  document.getElementById('trivia-icon').addEventListener('click', openTrivia);
+
   // Cerrar trivia tocando el fondo o el botón
   document.getElementById('trivia-overlay').addEventListener('click', (e) => {
     if (e.target === document.getElementById('trivia-overlay')) closeTrivia();
