@@ -60,6 +60,46 @@ function updateNightMode(now) {
   document.getElementById('night-overlay').classList.toggle('visible', isNight);
 }
 
+// ─── Sonido de notificación ────────────────────────────────────────────────────
+// iOS/Safari bloquea el audio hasta que hay un toque del usuario: el AudioContext
+// se crea/desbloquea en el primer toque y después se puede usar desde el timer.
+let audioCtx = null;
+
+function unlockAudio() {
+  try {
+    if (!audioCtx) {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      audioCtx = new Ctx();
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  } catch (err) {
+    log('No se pudo activar el audio:', err.message);
+  }
+}
+
+// Campanita de dos notas (tipo notificación)
+function playNotificationSound() {
+  try {
+    if (!audioCtx || audioCtx.state !== 'running') return;
+    const t0 = audioCtx.currentTime;
+    [[880, 0], [1318.5, 0.18]].forEach(([freq, offset]) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, t0 + offset);
+      gain.gain.exponentialRampToValueAtTime(0.5, t0 + offset + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + offset + 0.9);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(t0 + offset);
+      osc.stop(t0 + offset + 1);
+    });
+  } catch (err) {
+    log('No se pudo reproducir el sonido:', err.message);
+  }
+}
+
 // Dispara la trivia sola a ciertas horas del día (una vez por hora objetivo)
 function maybeAutoTrivia(now) {
   if (!state.triviaItems.length) return;
@@ -76,6 +116,7 @@ function maybeAutoTrivia(now) {
   if (anyOverlayOpen) return;
 
   openTrivia();
+  playNotificationSound();
 }
 
 function startClock() {
@@ -751,6 +792,10 @@ function setupListeners() {
 
   // Botón de actualizar (respaldo manual del auto-refresh)
   document.getElementById('refresh-btn').addEventListener('click', () => location.reload());
+
+  // Primer toque en la pantalla → habilita el audio para el sonido de la trivia
+  document.addEventListener('touchstart', unlockAudio, { passive: true });
+  document.addEventListener('click', unlockAudio);
 
   // Tap en ícono de trivia → abrir juego
   document.getElementById('trivia-icon').addEventListener('click', openTrivia);
